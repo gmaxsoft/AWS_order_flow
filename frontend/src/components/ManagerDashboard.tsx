@@ -37,7 +37,7 @@ export function ManagerDashboard() {
   };
 
   useEffect(() => {
-    loadOrders();
+    queueMicrotask(() => loadOrders());
   }, []);
 
   return (

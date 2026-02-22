@@ -12,6 +12,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "lint": "echo 'No lint configured'",
     "clean": "rimraf dist"
   },
   "devDependencies": {

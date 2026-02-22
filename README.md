@@ -70,6 +70,13 @@ npm install
 | `npm run lint` | Lint wszystkich pakietów |
 | `npm run clean` | Czyści artefakty budowania |
 
+## GitHub Actions (CI)
+
+Workflow `.github/workflows/ci.yml` uruchamia się przy push/PR na `main` lub `master`:
+
+1. **build-and-lint** – `npm ci`, `npm run build`, `npm run lint`
+2. **cdk-synth** – `cd infra && npx cdk synth` (wymaga przejścia build-and-lint)
+
 ## Workspaces
 
 - **@aws-order-flow/frontend** – Dashboard: `cd frontend && npm run dev`

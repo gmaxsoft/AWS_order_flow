@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "lint": "echo 'No lint configured'",
     "build": "tsc",
     "watch": "tsc -w",
     "cdk": "cdk",

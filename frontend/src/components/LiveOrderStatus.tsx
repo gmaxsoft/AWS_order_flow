@@ -18,9 +18,11 @@ export function LiveOrderStatus({ executionArn, orderId }: LiveOrderStatusProps)
 
   useEffect(() => {
     if (!executionArn) {
-      setStatus(null);
-      setOutput(null);
-      setError(null);
+      queueMicrotask(() => {
+        setStatus(null);
+        setOutput(null);
+        setError(null);
+      });
       return;
     }
 
@@ -56,14 +58,6 @@ export function LiveOrderStatus({ executionArn, orderId }: LiveOrderStatusProps)
     );
   }
 
-  const StatusIcon = () => {
-    if (status === 'RUNNING') return <Loader2 className="h-5 w-5 animate-spin" />;
-    if (status === 'SUCCEEDED') return <CheckCircle className="h-5 w-5 text-green-600" />;
-    if (status === 'FAILED' || status === 'TIMED_OUT' || status === 'ABORTED')
-      return <XCircle className="h-5 w-5 text-red-600" />;
-    return <Activity className="h-5 w-5" />;
-  };
-
   const statusVariant =
     status === 'SUCCEEDED' ? 'success' : status === 'FAILED' || status === 'TIMED_OUT' ? 'destructive' : 'secondary';
 
@@ -78,7 +72,14 @@ export function LiveOrderStatus({ executionArn, orderId }: LiveOrderStatusProps)
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-center gap-2">
-          <StatusIcon />
+          {status === 'RUNNING' && <Loader2 className="h-5 w-5 animate-spin" />}
+          {status === 'SUCCEEDED' && <CheckCircle className="h-5 w-5 text-green-600" />}
+          {(status === 'FAILED' || status === 'TIMED_OUT' || status === 'ABORTED') && (
+            <XCircle className="h-5 w-5 text-red-600" />
+          )}
+          {status !== 'RUNNING' && status !== 'SUCCEEDED' && status !== 'FAILED' && status !== 'TIMED_OUT' && status !== 'ABORTED' && (
+            <Activity className="h-5 w-5" />
+          )}
           <span className="text-sm font-medium">
             {orderId ?? 'Order'} – {status ?? 'Polling...'}
           </span>
