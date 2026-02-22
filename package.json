@@ -1,0 +1,23 @@
+{
+  "name": "aws-order-flow",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "infra",
+    "frontend",
+    "shared"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0"
+  },
+  "packageManager": "npm@10.0.0",
+  "engines": {
+    "node": ">=18"
+  }
+}
