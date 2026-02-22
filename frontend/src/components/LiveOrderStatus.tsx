@@ -18,11 +18,11 @@ export function LiveOrderStatus({ executionArn, orderId }: LiveOrderStatusProps)
 
   useEffect(() => {
     if (!executionArn) {
-      queueMicrotask(() => {
-        setStatus(null);
-        setOutput(null);
-        setError(null);
-      });
+      // Synchronous cleanup - queueMicrotask would cause race if executionArn changes again quickly
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional sync reset to avoid stale state race
+      setStatus(null);
+      setOutput(null);
+      setError(null);
       return;
     }
 
