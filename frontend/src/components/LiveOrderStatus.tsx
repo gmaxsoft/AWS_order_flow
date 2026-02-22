@@ -87,11 +87,22 @@ export function LiveOrderStatus({ executionArn, orderId }: LiveOrderStatusProps)
         {error && (
           <p className="text-sm text-red-600">{error}</p>
         )}
-        {output != null && status === 'SUCCEEDED' && (
-          <pre className="rounded bg-slate-100 p-3 text-xs overflow-auto max-h-32">
-            {String(JSON.stringify(typeof output === 'string' ? JSON.parse(output) : output, null, 2))}
-          </pre>
-        )}
+        {output != null && status === 'SUCCEEDED' && (() => {
+          try {
+            const parsed = typeof output === 'string' ? JSON.parse(output) : output;
+            return (
+              <pre className="rounded bg-slate-100 p-3 text-xs overflow-auto max-h-32">
+                {JSON.stringify(parsed, null, 2)}
+              </pre>
+            );
+          } catch {
+            return (
+              <pre className="rounded bg-slate-100 p-3 text-xs overflow-auto max-h-32">
+                {String(output)}
+              </pre>
+            );
+          }
+        })()}
       </CardContent>
     </Card>
   );

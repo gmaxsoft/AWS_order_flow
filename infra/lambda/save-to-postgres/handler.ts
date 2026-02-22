@@ -30,8 +30,10 @@ export const handler: Handler<SaveOrderInput> = async (event) => {
 
   const hasDbCreds = DB_HOST && DB_NAME && DB_USER && DB_PASSWORD;
 
+  let postgresSuccess = false;
+
   if (hasDbCreds) {
-    logger.info('Saving order to PostgreSQL and updating DynamoDB', { orderId: event.orderId });
+    logger.info('Saving order to PostgreSQL', { orderId: event.orderId });
 
     const client = new Client({
       host: DB_HOST,
@@ -46,43 +48,51 @@ export const handler: Handler<SaveOrderInput> = async (event) => {
       await client.connect();
 
       await client.query(
-      `INSERT INTO orders (id, customer_id, total_amount, status, created_at)
-       VALUES ($1, $2, $3, 'confirmed', NOW())
-       ON CONFLICT (id) DO UPDATE SET status = 'confirmed', updated_at = NOW()`,
-      [event.orderId, event.customerId, event.totalAmount]
-    );
-
-    for (const item of event.items) {
-      await client.query(
-        `INSERT INTO order_items (order_id, product_id, quantity, unit_price)
-         VALUES ($1, $2, $3, $4)`,
-        [event.orderId, item.productId, item.quantity, item.unitPrice]
+        `INSERT INTO orders (id, customer_id, total_amount, status, created_at)
+         VALUES ($1, $2, $3, 'confirmed', NOW())
+         ON CONFLICT (id) DO UPDATE SET status = 'confirmed', updated_at = NOW()`,
+        [event.orderId, event.customerId, event.totalAmount]
       );
-    }
 
+      for (const item of event.items) {
+        await client.query(
+          `INSERT INTO order_items (order_id, product_id, quantity, unit_price)
+           VALUES ($1, $2, $3, $4)`,
+          [event.orderId, item.productId, item.quantity, item.unitPrice]
+        );
+      }
+
+      postgresSuccess = true;
       logger.info('Order saved to PostgreSQL', { orderId: event.orderId });
     } finally {
       await client.end();
     }
   } else {
     logger.warn('DB credentials not configured - skipping PostgreSQL, updating DynamoDB only');
+    postgresSuccess = true; // No DB to fail, safe to update DynamoDB
   }
 
-  // Update DynamoDB inventory (decrement quantity)
-  for (const item of event.items) {
-    await dynamo.send(
-      new UpdateItemCommand({
-        TableName: INVENTORY_TABLE,
-        Key: { productId: { S: item.productId } },
-        UpdateExpression: 'SET quantity = if_not_exists(quantity, :zero) - :qty',
-        ExpressionAttributeValues: {
-          ':qty': { N: String(item.quantity) },
-          ':zero': { N: '0' },
-        },
-      })
-    );
+  // Update DynamoDB inventory only after successful PostgreSQL save (or when DB not configured)
+  if (postgresSuccess) {
+    for (const item of event.items) {
+      await dynamo.send(
+        new UpdateItemCommand({
+          TableName: INVENTORY_TABLE,
+          Key: { productId: { S: item.productId } },
+          UpdateExpression: 'SET quantity = if_not_exists(quantity, :zero) - :qty',
+          ExpressionAttributeValues: {
+            ':qty': { N: String(item.quantity) },
+            ':zero': { N: '0' },
+          },
+        })
+      );
+    }
+    logger.info('DynamoDB inventory updated', { orderId: event.orderId });
+  } else {
+    logger.error('PostgreSQL save failed - skipping DynamoDB update to avoid inconsistency', {
+      orderId: event.orderId,
+    });
+    throw new Error('Failed to save order to PostgreSQL');
   }
-
-  logger.info('DynamoDB inventory updated', { orderId: event.orderId });
   return event;
 };
