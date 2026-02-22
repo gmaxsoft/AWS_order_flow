@@ -1,45 +1,41 @@
-import { useState } from 'react'
-import type { Product, Order } from '@aws-order-flow/shared'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import { Package } from 'lucide-react';
+import { ProductsList } from '@/components/ProductsList';
+import { LiveOrderStatus } from '@/components/LiveOrderStatus';
+import { ManagerDashboard } from '@/components/ManagerDashboard';
 
 function App() {
-  const [count, setCount] = useState(0)
-  const sampleProduct: Product = { id: '1', name: 'Sample Product', price: 29.99 }
-  const sampleOrder: Order = {
-    id: 'ord-1',
-    customerId: 'cust-1',
-    items: [{ productId: '1', quantity: 2, unitPrice: 29.99 }],
-    status: 'pending',
-    totalAmount: 59.98,
-  }
+  const [activeOrder, setActiveOrder] = useState<{ orderId: string; executionArn: string } | null>(null);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-8">
-      <div className="flex gap-4 mb-6">
-        <a href="https://vite.dev" target="_blank" rel="noreferrer">
-          <img src={viteLogo} className="h-24 p-4 hover:drop-shadow-lg transition" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank" rel="noreferrer">
-          <img src={reactLogo} className="h-24 p-4 hover:drop-shadow-lg transition" alt="React logo" />
-        </a>
-      </div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-4">AWS Order Flow</h1>
-      <p className="text-gray-600 mb-6">Vite + React + Tailwind + TypeScript</p>
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <button
-          onClick={() => setCount((c) => c + 1)}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-        >
-          count is {count}
-        </button>
-        <p className="mt-4 text-sm text-gray-500">
-          Shared types: {sampleProduct.name} · Order #{sampleOrder.id}
-        </p>
-      </div>
+    <div className="min-h-screen bg-slate-50">
+      <header className="border-b bg-white">
+        <div className="container mx-auto px-4 py-4 flex items-center gap-2">
+          <Package className="h-8 w-8 text-slate-900" />
+          <h1 className="text-xl font-bold">AWS Order Flow</h1>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="space-y-8">
+          <section>
+            <ProductsList onOrderPlaced={(orderId: string, executionArn: string) => setActiveOrder({ orderId, executionArn })} />
+          </section>
+
+          <section>
+            <LiveOrderStatus
+              executionArn={activeOrder?.executionArn ?? null}
+              orderId={activeOrder?.orderId ?? null}
+            />
+          </section>
+
+          <section>
+            <ManagerDashboard />
+          </section>
+        </div>
+      </main>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
